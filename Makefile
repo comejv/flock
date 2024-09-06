@@ -2,6 +2,7 @@ CC=gcc
 
 ### Parameters ###
 DEBUG := ON
+$(info DEBUG is $(DEBUG))
 
 PLUG := ON
 $(info PLUG is $(PLUG))
