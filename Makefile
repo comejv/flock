@@ -1,7 +1,7 @@
 CC=gcc
 
 ### Parameters ###
-DEBUG := ON
+DEBUG := OFF
 $(info DEBUG is $(DEBUG))
 
 PLUG := ON
@@ -86,3 +86,6 @@ cleanall: ## Remove the bin directory, the executable and clean libraries.
 
 help: ## Prints help for targets with comments
 	@cat $(MAKEFILE_LIST) | grep -E '^[a-zA-Z_-]+:.*?## .*$$' | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@printf "\033[32m%-30s\033[0m %s\n" "PLUG {[ON]/OFF}" "ON for shared libraries and hot reload"
+
+

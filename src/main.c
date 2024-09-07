@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
     bool showEnergy = true;
     bool showHelp = true;
     bool showRadii = true;
+    bool showCount = true;
 
     double previousTime = GetTime();
     double currentTime = 0.0;
@@ -108,7 +109,7 @@ int main(int argc, char *argv[])
                 .pos = {GetRandomValue(0, GetScreenWidth()), GetRandomValue(0, GetScreenHeight())},
                 .velocity = {GetRandomValue(-5, 5), GetRandomValue(-5, 5)},
                 .maxSpeed = GetRandomValue(4, 10),
-                .size = {20, 20},
+                .size = {15, 15},
                 .col = BLACK};
             state->n_entities++;
         }
@@ -139,6 +140,10 @@ int main(int argc, char *argv[])
         else if (IsKeyPressed(KEY_I))
         {
             showRadii = !showRadii;
+        }
+        else if (IsKeyPressed(KEY_N))
+        {
+            showCount = !showCount;
         }
         else if (IsKeyPressed(KEY_H))
         {
@@ -257,16 +262,22 @@ int main(int argc, char *argv[])
             DrawText(TextFormat("Group radius : %.0f", state->groupRadius), 10,
                      GetScreenHeight() - 30, 20, BLUE);
         }
+        if (showCount)
+        {
+            DrawText(TextFormat("Entity count : %d", state->n_entities), GetScreenWidth() - 180,
+                     GetScreenHeight() - 30, 20, BLUE);
+        }
         if (showHelp)
         {
             DrawText("Help:", 10, 10, 20, BLUE);
             DrawText("F - Toggle FPS display", 10, 40, 20, BLUE);
             DrawText("E - Toggle Energy display", 10, 70, 20, BLUE);
-            DrawText(TextFormat("P - Add entity (max %d)", MAX_ENTITIES), 10, 100, 20, BLUE);
-            DrawText("M - Remove last entity", 10, 130, 20, BLUE);
-            DrawText("I - Show radii info", 10, 160, 20, BLUE);
-            DrawText("L/R arrows - change group radius", 10, 190, 20, BLUE);
-            DrawText("U/D arrows - change repulsion radius", 10, 210, 20, BLUE);
+            DrawText("N - Toggle Count display", 10, 100, 20, BLUE);
+            DrawText(TextFormat("P - Add entity (max %d)", MAX_ENTITIES), 10, 130, 20, BLUE);
+            DrawText("M - Remove last entity", 10, 160, 20, BLUE);
+            DrawText("I - Show radii info", 10, 190, 20, BLUE);
+            DrawText("L/R arrows - change group radius", 10, 220, 20, BLUE);
+            DrawText("U/D arrows - change repulsion radius", 10, 250, 20, BLUE);
         }
 
         EndDrawing();
