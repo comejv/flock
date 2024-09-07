@@ -1,5 +1,4 @@
 #include "raylib.h"
-#include "state.h"
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,8 +22,11 @@ int main(int argc, char *argv[])
         while (system("make"))
         {
             fprintf(stderr, "Failed to compile module. (%s)\n", dlerror());
-            fprintf(stderr, "Press return to try again.\n");
-            getchar();
+            fprintf(stderr, "Retry ? ([y]/n).\n");
+            if (getchar() == 'n')
+            {
+                exit(EXIT_FAILURE);
+            }
         }
 
         // Load the library
@@ -33,8 +35,11 @@ int main(int argc, char *argv[])
         while (module == NULL)
         {
             fprintf(stderr, "Failed to load module. (%s)\n", dlerror());
-            fprintf(stderr, "Press return to try again.\n");
-            getchar();
+            fprintf(stderr, "Retry ? ([y]/n).\n");
+            if (getchar() == 'n')
+            {
+                exit(EXIT_FAILURE);
+            }
         }
         module_main_func *module_main = dlsym(module, "module_main");
 
@@ -42,10 +47,11 @@ int main(int argc, char *argv[])
         if (state == NULL)
         {
             const int screenWidth = 800;
-            const int screenHeight = 450;
+            const int screenHeight = 800;
 
-            InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
-            SetTargetFPS(60);   // Set our game to run at 60 frames-per-second
+            SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+            InitWindow(screenWidth, screenHeight, "Flocking simulator");
+            SetTargetFPS(60);
         }
 
         state = module_main(state);

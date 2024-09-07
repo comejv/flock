@@ -1,7 +1,11 @@
 #pragma once
 
+#include "entity.h"
 struct simState
 {
-    int a;
+    entity_t *entities;
+    int n_entities;
+    float repulsionRadius;
+    float groupRadius;
 };
 typedef struct simState simState_t;
