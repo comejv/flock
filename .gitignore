@@ -1,4 +1,5 @@
 bin
+lib/raylib
 
 .cache
 compile_commands.json
