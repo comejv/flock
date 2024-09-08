@@ -276,8 +276,10 @@ int main(int argc, char *argv[])
             DrawText(TextFormat("P - Add entity (max %d)", MAX_ENTITIES), 10, 130, 20, BLUE);
             DrawText("M - Remove last entity", 10, 160, 20, BLUE);
             DrawText("I - Show radii info", 10, 190, 20, BLUE);
-            DrawText("L/R arrows - change group radius", 10, 220, 20, BLUE);
-            DrawText("U/D arrows - change repulsion radius", 10, 250, 20, BLUE);
+            DrawText("L/R arrows - Change group radius", 10, 220, 20, BLUE);
+            DrawText("U/D arrows - Change repulsion radius", 10, 250, 20, BLUE);
+            DrawText("R - Reload PLUG", 10, 310, 20, BLUE);
+            DrawText("ESC - Quit Flock", 10, 340, 20, BLUE);
         }
 
         EndDrawing();
