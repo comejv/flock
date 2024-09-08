@@ -43,6 +43,7 @@ make PLUG=OFF
 
 ## Controls
 
+- **R**: Compile and reload sources using the same game state (only if compiled with PLUG)
 - **F**: Toggle FPS display
 - **E**: Toggle Energy display
 - **N**: Toggle Entity Count display
@@ -64,12 +65,12 @@ make PLUG=OFF
 
 ## Makefile Targets
 
-- `make all`: Compile the project.
+- `make all`: Compile the project (PLUG is ON).
 - `make clean`: Remove object files.
-- `make cleanall`: Remove all binaries and object files.
-- `make raylib`: Compile Raylib into a static library.
+- `make cleanall`: Remove all binaries and object files, clean raylib as well.
+- `make raylib`: Compile Raylib into a static library (as .so by default, .a if PLUG=OFF).
 - `make help`: Display help for available Makefile targets.
 
 ## License
 
-This project is licensed under the GPL License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPLv3 License. See the [LICENSE](LICENSE) file for details.
