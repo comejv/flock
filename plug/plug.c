@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
         // Run the library
         if (state == NULL)
         {
-            const int screenWidth = 800;
+            const int screenWidth = 1600;
             const int screenHeight = 800;
 
             SetConfigFlags(FLAG_WINDOW_RESIZABLE);

@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "state.h"
+#include "vectors.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -10,7 +11,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define MAX_ENTITIES 1000
+#define MAX_ENTITIES       1000
+#define DEG_150_IN_RADIANS (5.0f * M_PI / 6.0f)   // 150 degrees in radians
 
 #ifdef PLUG
 void *module_main(void *old_state)
@@ -27,18 +29,13 @@ int main(int argc, char *argv[])
     {
         state = (simState_t *) malloc(sizeof(simState_t));
         state->entities = (entity_t *) malloc(MAX_ENTITIES * sizeof(entity_t));
-        for (int i = 0; i < 50; i++)
+        for (int i = 0; i < 30; i++)
         {
-            state->entities[i] = (entity_t){
-                .pos = {GetRandomValue(0, GetScreenWidth()), GetRandomValue(0, GetScreenHeight())},
-                .velocity = {GetRandomValue(-5, 5), GetRandomValue(-5, 5)},
-                .maxSpeed = GetRandomValue(5, 7),
-                .size = {40, 20},
-                .col = BLACK};
+            state->entities[i] = createDefaultEntity(GetScreenWidth(), GetScreenHeight());
             state->n_entities++;
         }
-        state->groupRadius = 400;
-        state->repulsionRadius = 100;
+        state->groupRadius = 140;
+        state->repulsionRadius = 50;
     }
     else
     {
@@ -48,7 +45,7 @@ int main(int argc, char *argv[])
     // Done by EndDrawing, required here to stop endless loop when plug reload
     PollInputEvents();
 #else
-    const int screenWidth = 800;
+    const int screenWidth = 1600;
     const int screenHeight = 800;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -58,17 +55,12 @@ int main(int argc, char *argv[])
     state = (simState_t *) malloc(sizeof(simState_t));
     state->entities = (entity_t *) malloc(MAX_ENTITIES * sizeof(entity_t));
 
-    state->repulsionRadius = 100;
-    state->groupRadius = 400;
+    state->repulsionRadius = 50;
+    state->groupRadius = 140;
 
-    for (int i = 0; i < 50; i++)
+    for (int i = 0; i < 30; i++)
     {
-        state->entities[i] = (entity_t){
-            .pos = {GetRandomValue(0, GetScreenWidth()), GetRandomValue(0, GetScreenHeight())},
-            .velocity = {GetRandomValue(-5, 5), GetRandomValue(-5, 5)},
-            .maxSpeed = GetRandomValue(5, 7),
-            .size = {15, 15},
-            .col = BLACK};
+        state->entities[i] = createDefaultEntity(GetScreenWidth(), GetScreenHeight());
         state->n_entities++;
     }
 #endif /* ifdef PLUG */
@@ -105,12 +97,8 @@ int main(int argc, char *argv[])
         }
         else if (IsKeyPressed(KEY_P) && state->n_entities < MAX_ENTITIES)
         {
-            state->entities[state->n_entities] = (entity_t){
-                .pos = {GetRandomValue(0, GetScreenWidth()), GetRandomValue(0, GetScreenHeight())},
-                .velocity = {GetRandomValue(-5, 5), GetRandomValue(-5, 5)},
-                .maxSpeed = GetRandomValue(4, 10),
-                .size = {15, 15},
-                .col = BLACK};
+            state->entities[state->n_entities] =
+                createDefaultEntity(GetScreenWidth(), GetScreenHeight());
             state->n_entities++;
         }
         else if (IsKeyPressed(KEY_SEMICOLON) && state->n_entities > 0)
@@ -120,35 +108,51 @@ int main(int argc, char *argv[])
         else if (IsKeyPressed(KEY_UP))   // Increase repulsion radius
         {
             state->repulsionRadius += 10.0f;
+            if (state->repulsionRadius > state->groupRadius)
+            {
+                state->repulsionRadius -= 10;
+            }
         }
-        else if (IsKeyPressed(KEY_DOWN))   // Decrease repulsion radius
+        else if (IsKeyPressed(KEY_DOWN) &&
+                 state->repulsionRadius >= 10)   // Decrease repulsion radius
         {
             state->repulsionRadius -= 10.0f;
-            if (state->repulsionRadius < 10.0f)
-                state->repulsionRadius = 10.0f;   // Prevent negative or too small values
         }
-        else if (IsKeyPressed(KEY_LEFT))   // Decrease group radius
+        else if (IsKeyPressed(KEY_LEFT) && state->groupRadius >= 10)   // Decrease group radius
         {
             state->groupRadius -= 10.0f;
-            if (state->groupRadius < 10.0f)
-                state->groupRadius = 10.0f;   // Prevent negative or too small values
         }
         else if (IsKeyPressed(KEY_RIGHT))   // Increase group radius
         {
             state->groupRadius += 10.0f;
+            if (state->groupRadius < state->repulsionRadius)
+            {
+                state->groupRadius -= 10;
+            }
         }
-        else if (IsKeyPressed(KEY_I))
+        else if (IsKeyPressed(KEY_I))   // Show radii values
         {
             showRadii = !showRadii;
         }
-        else if (IsKeyPressed(KEY_N))
+        else if (IsKeyPressed(KEY_N))   // Show entity count
         {
             showCount = !showCount;
         }
-        else if (IsKeyPressed(KEY_H))
+        else if (IsKeyPressed(KEY_H))   // Show keymap
         {
             showHelp = !showHelp;
         }
+        // either doesn't register the event or eats the CPU whole
+        // else if (IsKeyPressed(KEY_SPACE))
+        // {
+        //     do
+        //     {
+        //         WaitTime(1);
+        //         PollInputEvents();
+        //     } while (!IsKeyPressed(KEY_SPACE));
+        // }
+        Vector2 groupVec, toCentroid, meanDir;
+
         // Update
         //----------------------------------------------------------------------------------
         for (int i = 0; i < state->n_entities; i++)
@@ -158,7 +162,8 @@ int main(int argc, char *argv[])
 
             handleBoundariesCollisions(ent, state->repulsionRadius / 2);
 
-            Vector2 meanDirection = {0, 0};
+            Vector2 centroid = Vector2Zero();
+            meanDir = Vector2Zero();
             int count = 0;
 
             for (int j = 0; j < state->n_entities; j++)
@@ -169,54 +174,58 @@ int main(int argc, char *argv[])
                 Vector2 distanceVec = Vector2Subtract(ent->pos, state->entities[j].pos);
                 float distanceSqr = Vector2LengthSqr(distanceVec);
 
-                float groupRadiusSqr = state->groupRadius * state->groupRadius;
+                // Only consider neighbors within group radius and fov
+                if (distanceSqr > state->groupRadius * state->groupRadius ||
+                    Vector2AngleBetween(distanceVec, ent->velocity) > DEG_150_IN_RADIANS)
+                    continue;
+
                 float repulsionRadiusSqr = state->repulsionRadius * state->repulsionRadius;
 
-                // Repel
+                // Repel with smoothing
                 if (distanceSqr < repulsionRadiusSqr)
                 {
+                    Vector2 repulsionForce = Vector2Normalize(distanceVec);
                     ent->velocity =
-                        Vector2Add(ent->velocity,
-                                   Vector2Normalize(distanceVec));   // Repel with normalized vector
+                        Vector2Lerp(ent->velocity, Vector2Add(ent->velocity, repulsionForce),
+                                    0.3f);   // Smoothing factor for repulsion
                 }
-                // Group (but not too close)
-                else if (distanceSqr < groupRadiusSqr)
+                else
                 {
-                    float strength =
-                        (distanceSqr - repulsionRadiusSqr) / (groupRadiusSqr - repulsionRadiusSqr);
-
-                    // Apply grouping force scaled by strength
-                    ent->velocity = Vector2Add(
-                        ent->velocity,
-                        Vector2Scale(Vector2Normalize(Vector2Negate(distanceVec)), strength));
-
-                    // Accumulate direction for mean calculation
-                    meanDirection = Vector2Add(meanDirection, state->entities[j].velocity);
+                    // Compute centroid of the flock and mean direction
+                    centroid = Vector2Add(centroid, state->entities[j].pos);
+                    // Compute mean direction
+                    meanDir = Vector2Add(meanDir, state->entities[j].velocity);
                     count++;
                 }
             }
 
             if (count > 0)
             {
+                // Compute the centroid
+                centroid = Vector2Scale(centroid, 1.0f / count);
+                toCentroid = Vector2Normalize(Vector2Subtract(centroid, ent->pos));
+
                 // Compute the mean direction
-                meanDirection = Vector2Scale(meanDirection, 1.0f / count);
-                Vector2 toMeanDirection = Vector2Subtract(meanDirection, ent->velocity);
-                float meanDirectionStrength = 0.5f;   // Adjust this value as needed
+                meanDir = Vector2Normalize(Vector2Scale(meanDir, 1.0f / count));
 
-                // Apply mean direction force
+                float cohesionFactor = 0.7;   // Towards centroid
+                float alignmentFactor = 1;    // Align with the flock
+                groupVec = Vector2Add(Vector2Scale(toCentroid, cohesionFactor),
+                                      Vector2Scale(meanDir, alignmentFactor));
+
+                // Interpolate the velocity towards the desired velocity
                 ent->velocity =
-                    Vector2Add(ent->velocity, Vector2Scale(Vector2Normalize(toMeanDirection),
-                                                           meanDirectionStrength));
+                    Vector2Lerp(ent->velocity, Vector2Add(ent->velocity, groupVec), 0.18);
             }
 
-            // Compare length squared with limit squared (optimize)
-            if (Vector2LengthSqr(ent->velocity) > ent->maxSpeed * ent->maxSpeed)
+            // Max speed
+            // Clamp velocity to max speed if necessary
+            float velLengthSqr = Vector2LengthSqr(ent->velocity);
+            int enttSpeedSqr = ENTT_SPEED * ENTT_SPEED;
+            if (velLengthSqr > enttSpeedSqr)
             {
-                ent->velocity = Vector2Scale(ent->velocity, 0.9f);
+                ent->velocity = Vector2Scale(ent->velocity, enttSpeedSqr / velLengthSqr);
             }
-
-            // Drag
-            ent->velocity = Vector2Scale(ent->velocity, 0.8f);
         }
 
         //----------------------------------------------------------------------------------
@@ -231,7 +240,6 @@ int main(int argc, char *argv[])
         for (int i = 0; i < state->n_entities; i++)
         {
             entity_t *ent = &state->entities[i];
-            // Color relative to speed/max speed
             Vector2 direction = Vector2Normalize(ent->velocity);
 
             // Define the three points of the triangle
@@ -248,11 +256,20 @@ int main(int argc, char *argv[])
                                                     2};   // The other side of the base
 
             // Draw the triangle
-            DrawTriangle(p1, p3, p2,
-                         ColorFromHSV((1 - (Vector2LengthSqr(ent->velocity) /
-                                            (ent->maxSpeed * ent->maxSpeed))) *
-                                          220.f,
-                                      1, .8f));
+            // Color relative to speed/max speed
+            DrawTriangle(
+                p1, p3, p2,
+                ColorFromHSV((1 - (Vector2LengthSqr(ent->velocity) / (ENTT_SPEED * ENTT_SPEED))) *
+                                 220.f,
+                             1, .8f));
+            if (!i && showRadii)
+            {
+                DrawCircleLinesV(ent->pos, state->repulsionRadius, RED);
+                DrawCircleLinesV(ent->pos, state->groupRadius, BLUE);
+                DrawLineV(ent->pos, Vector2Add(ent->pos, Vector2Scale(groupVec, 100)), MAGENTA);
+                DrawLineV(ent->pos, Vector2Add(ent->pos, Vector2Scale(toCentroid, 100)), LIME);
+                DrawLineV(ent->pos, Vector2Add(ent->pos, Vector2Scale(meanDir, 100)), MAROON);
+            }
         }
 
         // FPS counter
@@ -273,10 +290,12 @@ int main(int argc, char *argv[])
         }
         if (showRadii)
         {
-            DrawText(TextFormat("Repulsion radius : %.0f", state->repulsionRadius), 10,
-                     GetScreenHeight() - 60, 20, BLUE);
             DrawText(TextFormat("Group radius : %.0f", state->groupRadius), 10,
                      GetScreenHeight() - 30, 20, BLUE);
+            DrawText(TextFormat("Repulsion radius : %.0f", state->repulsionRadius), 10,
+                     GetScreenHeight() - 60, 20, BLUE);
+            DrawText("Green : to centroid\nMaroon : mean direction\nMagenta : scaled sum", 10,
+                     GetScreenHeight() - 140, 20, BLUE);
         }
         if (showCount)
         {
@@ -285,17 +304,16 @@ int main(int argc, char *argv[])
         }
         if (showHelp)
         {
-            DrawText("Help:", 10, 10, 20, BLUE);
-            DrawText("F - Toggle FPS display", 10, 40, 20, BLUE);
-            DrawText("E - Toggle Energy display", 10, 70, 20, BLUE);
-            DrawText("N - Toggle Count display", 10, 100, 20, BLUE);
-            DrawText(TextFormat("P - Add entity (max %d)", MAX_ENTITIES), 10, 130, 20, BLUE);
-            DrawText("M - Remove last entity", 10, 160, 20, BLUE);
-            DrawText("I - Show radii info", 10, 190, 20, BLUE);
-            DrawText("L/R arrows - Change group radius", 10, 220, 20, BLUE);
-            DrawText("U/D arrows - Change repulsion radius", 10, 250, 20, BLUE);
-            DrawText("R - Reload PLUG", 10, 310, 20, BLUE);
-            DrawText("ESC - Quit Flock", 10, 340, 20, BLUE);
+            DrawText("F - Toggle FPS display", 10, 10, 20, BLUE);
+            DrawText("E - Toggle Energy display", 10, 40, 20, BLUE);
+            DrawText("N - Toggle Count display", 10, 70, 20, BLUE);
+            DrawText(TextFormat("P - Add entity (max %d)", MAX_ENTITIES), 10, 100, 20, BLUE);
+            DrawText("M - Remove last entity", 10, 130, 20, BLUE);
+            DrawText("I - Show radii info", 10, 160, 20, BLUE);
+            DrawText("L/R arrows - Change group radius", 10, 190, 20, BLUE);
+            DrawText("U/D arrows - Change repulsion radius", 10, 220, 20, BLUE);
+            DrawText("R - Reload PLUG", 10, 280, 20, BLUE);
+            DrawText("ESC - Quit Flock", 10, 310, 20, BLUE);
         }
 
         EndDrawing();

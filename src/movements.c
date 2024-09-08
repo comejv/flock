@@ -42,11 +42,4 @@ void handleBoundariesCollisions(entity_t *ent, int radius)
 
     // Apply the steering force to the entity's velocity
     ent->velocity = Vector2Add(ent->velocity, steering);
-
-    // Normalize velocity to limit speed
-    float speedSqr = Vector2LengthSqr(ent->velocity);
-    if (speedSqr > ent->maxSpeed)
-    {
-        ent->velocity = Vector2Scale(Vector2Normalize(ent->velocity), ent->maxSpeed);
-    }
 }
