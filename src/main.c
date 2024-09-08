@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
                 .pos = {GetRandomValue(0, GetScreenWidth()), GetRandomValue(0, GetScreenHeight())},
                 .velocity = {GetRandomValue(-5, 5), GetRandomValue(-5, 5)},
                 .maxSpeed = GetRandomValue(5, 7),
-                .size = {15, 15},
+                .size = {40, 20},
                 .col = BLACK};
             state->n_entities++;
         }
@@ -232,11 +232,27 @@ int main(int argc, char *argv[])
         {
             entity_t *ent = &state->entities[i];
             // Color relative to speed/max speed
-            DrawRectangleV(ent->pos, (Vector2){ent->size.x, ent->size.y},
-                           ColorFromHSV((1 - (Vector2LengthSqr(ent->velocity) /
-                                              (ent->maxSpeed * ent->maxSpeed))) *
-                                            220.f,
-                                        1, .8f));
+            Vector2 direction = Vector2Normalize(ent->velocity);
+
+            // Define the three points of the triangle
+            Vector2 p1 = (Vector2){ent->pos.x + direction.x * ent->size.x / 2,
+                                   ent->pos.y + direction.y * ent->size.x /
+                                                    2};   // Tip of the arrow (length)
+
+            // Base vertices (width applied to the perpendicular direction)
+            Vector2 p2 =
+                (Vector2){ent->pos.x - direction.y * ent->size.y / 2,
+                          ent->pos.y + direction.x * ent->size.y / 2};   // One side of the base
+            Vector2 p3 = (Vector2){ent->pos.x + direction.y * ent->size.y / 2,
+                                   ent->pos.y - direction.x * ent->size.y /
+                                                    2};   // The other side of the base
+
+            // Draw the triangle
+            DrawTriangle(p1, p3, p2,
+                         ColorFromHSV((1 - (Vector2LengthSqr(ent->velocity) /
+                                            (ent->maxSpeed * ent->maxSpeed))) *
+                                          220.f,
+                                      1, .8f));
         }
 
         // FPS counter
