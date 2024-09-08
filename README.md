@@ -9,6 +9,10 @@ This project is a flocking simulator using the Raylib library. It demonstrates b
 - **Real-time Metrics**: Display FPS, simulation energy, and entity count.
 - **Interactive Controls**: Toggle various display options and modify parameters on the fly.
 
+<p align="center">
+<img src="https://github.com/user-attachments/assets/8f4703c3-a493-467d-89a3-36c3388d9ba7" width="500" height="500">
+</p>
+
 ## Dependencies
 
 - [Raylib](https://www.raylib.com/) - for graphics and window management.
