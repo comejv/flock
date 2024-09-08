@@ -3,7 +3,7 @@
 #include "raylib.h"
 #include <stdint.h>
 
-#define ENTT_SPEED 5
+#define ENTT_SPEED 6
 
 struct entity
 {

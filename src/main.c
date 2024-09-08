@@ -260,8 +260,10 @@ int main(int argc, char *argv[])
             DrawTriangle(
                 p1, p3, p2,
                 ColorFromHSV((1 - (Vector2LengthSqr(ent->velocity) / (ENTT_SPEED * ENTT_SPEED))) *
-                                 220.f,
-                             1, .8f));
+                                     60.f +
+                                 180.f,
+                             1.f, 1.f));
+
             if (!i && showRadii)
             {
                 DrawCircleLinesV(ent->pos, state->repulsionRadius, RED);
