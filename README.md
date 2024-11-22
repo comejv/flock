@@ -48,6 +48,7 @@ make PLUG=OFF
 - **E**: Toggle Energy display
 - **N**: Toggle Entity Count display
 - **P**: Add an entity (up to 1000 entities)
+- **O**: Add 10 entities (up to 1000 entities)
 - **M**: Remove the last entity
 - **I**: Toggle Radii Information display
 - **UP Arrow**: Increase repulsion radius
