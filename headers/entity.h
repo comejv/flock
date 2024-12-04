@@ -4,6 +4,8 @@
 #include <stdint.h>
 
 #define ENTT_SPEED 6
+#define ENTT_SIZE_W 20
+#define ENTT_SIZE_L 40
 
 struct entity
 {

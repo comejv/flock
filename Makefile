@@ -1,14 +1,23 @@
 CC=gcc
 
 ### Parameters ###
-DEBUG := OFF
-$(info DEBUG is $(DEBUG))
-
-PLUG := ON
-$(info PLUG is $(PLUG))
-
 MAKEFLAGS := --jobs=$(shell nproc) --output-sync=target
 $(info Running with $(shell nproc) jobs.)
+
+DEBUG := OFF
+ifeq ($(DEBUG), ON)
+$(info DEBUG is $(DEBUG))
+endif
+
+PLUG := ON
+ifeq ($(PLUG), ON)
+$(info PLUG is $(PLUG))
+endif
+
+ASAN := OFF
+ifeq ($(ASAN), ON)
+$(info ASAN is $(ASAN))
+endif
 
 ### Directories ###
 PLUGDIR := plug
@@ -19,9 +28,9 @@ HEADERSDIR := headers
 LIBDIR := lib
 
 ### Compilation and linker flags ###
-CFLAGS := -Wall
+CFLAGS := -Wall -fopenmp
 CPPFLAGS := -I$(LIBDIR)/raylib/src -I$(HEADERSDIR)
-LDFLAGS :=
+LDFLAGS := -fopenmp
 
 ifeq ($(DEBUG), ON)
 	CFLAGS += -g
@@ -37,6 +46,12 @@ ifeq ($(PLUG), ON)
 	LDFLAGS += -shared
 	RAYLIB_MAKE_FLAGS += RAYLIB_LIBTYPE=SHARED
 	RAYLIB_IMPORT_FLAGS += -Wl,-rpath=$(abspath $(LIBDIR)/raylib/src)
+endif
+
+#FIXME doesn't find so needs LD_LIBRARY_PATH and no proper initialization
+ifeq ($(ASAN), ON)
+	CFLAGS+=-fsanitize=address -fPIC -g
+	LDFLAGS+=-fsanitize=address -fPIC
 endif
 
 ### Files ###

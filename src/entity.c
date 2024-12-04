@@ -27,6 +27,6 @@ entity_t createDefaultEntity(int maxX, int maxY)
 
     return (entity_t){.pos = {GetRandomValue(0, maxX), GetRandomValue(0, maxY)},
                       .velocity = velocity,
-                      .size = {40, 20},
+                      .size = {ENTT_SIZE_L, ENTT_SIZE_W},
                       .col = BLACK};
 }

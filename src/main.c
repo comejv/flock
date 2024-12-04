@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define MAX_ENTITIES       1000
 #define DEG_150_IN_RADIANS (5.0f * M_PI / 6.0f)   // 150 degrees in radians
 
 #ifdef PLUG
@@ -22,14 +21,15 @@ int main(int argc, char *argv[])
 {
     // Initialization
     //--------------------------------------------------------------------------------------
+    int max_entities = 30;
     simState_t *state;
 
 #ifdef PLUG
     if (old_state == NULL)
     {
         state = (simState_t *) malloc(sizeof(simState_t));
-        state->entities = (entity_t *) malloc(MAX_ENTITIES * sizeof(entity_t));
-        for (int i = 0; i < 30; i++)
+        state->entities = (entity_t *) malloc(sizeof(entity_t[max_entities]));
+        for (int i = 0; i < max_entities; i++)
         {
             state->entities[i] = createDefaultEntity(GetScreenWidth(), GetScreenHeight());
             state->n_entities++;
@@ -53,18 +53,17 @@ int main(int argc, char *argv[])
     SetTargetFPS(60);   // Set our game to run at 60 frames-per-second
 
     state = (simState_t *) malloc(sizeof(simState_t));
-    state->entities = (entity_t *) malloc(MAX_ENTITIES * sizeof(entity_t));
+    state->entities = (entity_t *) malloc(sizeof(entity_t[max_entities]));
 
     state->repulsionRadius = 50;
     state->groupRadius = 140;
 
-    for (int i = 0; i < 30; i++)
+    for (int i = 0; i < max_entities; i++)
     {
         state->entities[i] = createDefaultEntity(GetScreenWidth(), GetScreenHeight());
         state->n_entities++;
     }
 #endif /* ifdef PLUG */
-
     bool showFPS = true;
     bool showEnergy = true;
     bool showHelp = true;
@@ -95,8 +94,12 @@ int main(int argc, char *argv[])
         {
             showEnergy = !showEnergy;
         }
-        else if (IsKeyPressed(KEY_P) && state->n_entities < MAX_ENTITIES)
+        else if (IsKeyPressed(KEY_P) )
         {
+            if (state->n_entities >= max_entities){
+                state->entities = realloc(state->entities, 2 * sizeof(entity_t[state->n_entities]));
+                max_entities *= 2;
+            }
             state->entities[state->n_entities] =
                 createDefaultEntity(GetScreenWidth(), GetScreenHeight());
             state->n_entities++;
@@ -155,6 +158,7 @@ int main(int argc, char *argv[])
 
         // Update
         //----------------------------------------------------------------------------------
+        #pragma omp parallel for
         for (int i = 0; i < state->n_entities; i++)
         {
             entity_t *ent = &state->entities[i];
@@ -309,7 +313,7 @@ int main(int argc, char *argv[])
             DrawText("F - Toggle FPS display", 10, 10, 20, BLUE);
             DrawText("E - Toggle Energy display", 10, 40, 20, BLUE);
             DrawText("N - Toggle Count display", 10, 70, 20, BLUE);
-            DrawText(TextFormat("P - Add entity (max %d)", MAX_ENTITIES), 10, 100, 20, BLUE);
+            DrawText(TextFormat("P - Add entity (max %d)", max_entities), 10, 100, 20, BLUE);
             DrawText("M - Remove last entity", 10, 130, 20, BLUE);
             DrawText("I - Show radii info", 10, 160, 20, BLUE);
             DrawText("L/R arrows - Change group radius", 10, 190, 20, BLUE);
